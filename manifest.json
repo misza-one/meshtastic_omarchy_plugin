@@ -4,6 +4,7 @@
   "name": "Meshtastic",
   "version": "1.0.0",
   "author": "miszarchy",
+  "license": "GPL-3.0-only",
   "description": "USB and Bluetooth Meshtastic messenger with local history, notifications and radio configuration",
   "kinds": ["bar-widget"],
   "keepLoaded": true,
@@ -14,7 +15,7 @@
     "displayName": "Meshtastic",
     "description": "USB and Bluetooth channel messages, notifications and radio configuration",
     "category": "Network",
-    "defaultSection": "centerBegin",
+    "defaultSection": "center",
     "allowMultiple": false
   }
 }

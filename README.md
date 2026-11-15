@@ -46,6 +46,9 @@ omarchy plugin enable miszarchy.meshtastic --section centerBegin
 omarchy-shell shell summon miszarchy.meshtastic
 ```
 
+The manifest uses the portable `center` default, which current Omarchy places
+beside the clock. The explicit command above selects its left-hand side.
+
 For a development checkout, run `./bin/install` there instead. It links the
 installed plugin to the checkout root; do not move the checkout afterward.
 An old link to this same checkout's `plugin/` is migrated to the root. Its
