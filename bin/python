@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+runtime="${XDG_DATA_HOME:-$HOME/.local/share}/omarchy-meshtastic/venv/bin/python"
+exec "$runtime" "$@"

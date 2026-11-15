@@ -1,0 +1,17 @@
+# Managed by miszarchy.meshtastic bin/install
+[Unit]
+Description=Meshtastic messenger radio bridge
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+EnvironmentFile=-%E/omarchy/meshtastic.env
+ExecStart="%E/omarchy/plugins/miszarchy.meshtastic/bin/python" "%E/omarchy/plugins/miszarchy.meshtastic/plugin/bridge.py" daemon
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=graphical-session.target

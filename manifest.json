@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "miszarchy.meshtastic",
+  "name": "Meshtastic",
+  "version": "1.0.0",
+  "author": "miszarchy",
+  "description": "USB and Bluetooth Meshtastic messenger with local history, notifications and radio configuration",
+  "kinds": ["bar-widget"],
+  "keepLoaded": true,
+  "entryPoints": {
+    "barWidget": "plugin/BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Meshtastic",
+    "description": "USB and Bluetooth channel messages, notifications and radio configuration",
+    "category": "Network",
+    "defaultSection": "centerBegin",
+    "allowMultiple": false
+  }
+}

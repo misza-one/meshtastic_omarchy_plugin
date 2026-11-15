@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+cd -- "$root"
+"$root/bin/python" -m unittest discover -s tests -v
+runtime=$(mktemp -d)
+trap 'rm -rf -- "$runtime"' EXIT
+export QT_QPA_PLATFORM=offscreen XDG_RUNTIME_DIR="$runtime" XDG_CACHE_HOME="$runtime/cache"
+quickshell --no-color --path "$root/qmltests.qml"

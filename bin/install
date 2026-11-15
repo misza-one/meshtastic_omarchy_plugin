@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
+config=${XDG_CONFIG_HOME:-$HOME/.config}
+plugin="$config/omarchy/plugins/miszarchy.meshtastic"
+service="$config/systemd/user/omarchy-meshtastic.service"
+template="$root/packaging/omarchy-meshtastic.service"
+data="${XDG_DATA_HOME:-$HOME/.local/share}/omarchy-meshtastic"
+runtime="$data/venv"
+legacy_backup="$data/legacy-project-venv"
+
+for tool in uv omarchy systemctl notify-send; do
+  command -v "$tool" >/dev/null || { printf 'Missing dependency: %s\n' "$tool" >&2; exit 1; }
+done
+
+# Validate ownership before changing dependencies, links or services.
+if [[ -e "$plugin" || -L "$plugin" ]]; then
+  target=$(readlink -f -- "$plugin")
+  [[ "$target" == "$root" || ( -L "$plugin" && "$target" == "$root/plugin" ) ]] || {
+    printf 'Refusing unrelated plugin: %s\n' "$plugin" >&2; exit 1;
+  }
+fi
+legacy_environment=false
+if [[ -e "$root/plugin/.venv" || -L "$root/plugin/.venv" ]]; then
+  [[ -L "$root/plugin/.venv" && $(readlink -f -- "$root/plugin/.venv") == "$root/.venv" ]] || {
+    printf 'Refusing unrelated legacy environment: %s\n' "$root/plugin/.venv" >&2; exit 1;
+  }
+  legacy_environment=true
+fi
+if [[ -e "$root/.venv" || -L "$root/.venv" ]]; then
+  [[ "$legacy_environment" == true && -d "$root/.venv" && ! -L "$root/.venv" ]] || {
+    printf 'Move your development .venv outside the plugin before setup.\n' >&2; exit 1;
+  }
+  [[ ! -e "$legacy_backup" && ! -L "$legacy_backup" ]] || {
+    printf 'Refusing to replace preserved environment: %s\n' "$legacy_backup" >&2; exit 1;
+  }
+fi
+if [[ -e "$service" || -L "$service" ]]; then
+  [[ ! -L "$service" && -f "$service" ]] || { printf 'Refusing service symlink or non-file\n' >&2; exit 1; }
+  expected=$(cat -- "$template")
+  legacy=${expected#*$'\n'}
+  legacy=${legacy//\/bin\/python/\/.venv\/bin\/python}
+  legacy=${legacy//\/plugin\/bridge.py/\/bridge.py}
+  actual=$(cat -- "$service")
+  [[ "$actual" == "$expected" || "$actual" == "$legacy" ]] || {
+    printf 'Refusing unrelated or customized service: %s\n' "$service" >&2; exit 1;
+  }
+fi
+if [[ "$legacy_environment" == true ]]; then
+  if [[ -d "$root/.venv" ]]; then
+    mkdir -p -- "$data"
+    mv -- "$root/.venv" "$legacy_backup"
+  fi
+  rm -- "$root/plugin/.venv"
+fi
+omarchy plugin validate "$root"
+if [[ ! -x "$runtime/bin/python" ]]; then
+  uv venv "$runtime" --python 3.13
+fi
+uv pip install --python "$runtime/bin/python" -r "$root/requirements.txt"
+mkdir -p -- "$(dirname -- "$plugin")" "$(dirname -- "$service")"
+if [[ -L "$plugin" && $(readlink -f -- "$plugin") == "$root/plugin" ]]; then
+  rm -- "$plugin"
+fi
+[[ -e "$plugin" ]] || ln -s -- "$root" "$plugin"
+install -m 644 -- "$template" "$service"
+systemctl --user daemon-reload
+systemctl --user enable omarchy-meshtastic.service
+systemctl --user restart omarchy-meshtastic.service
+printf '\nBridge ready. Existing layout, environment and history preserved.\n'
+printf 'To add the widget explicitly: omarchy plugin enable miszarchy.meshtastic --section centerBegin\n'

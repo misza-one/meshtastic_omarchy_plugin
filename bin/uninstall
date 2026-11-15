@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)
+config=${XDG_CONFIG_HOME:-$HOME/.config}
+plugin="$config/omarchy/plugins/miszarchy.meshtastic"
+service="$config/systemd/user/omarchy-meshtastic.service"
+if [[ -e "$plugin" || -L "$plugin" ]]; then
+  target=$(readlink -f -- "$plugin")
+  [[ "$target" == "$root" || ( -L "$plugin" && "$target" == "$root/plugin" ) ]] || {
+    printf 'Refusing unrelated plugin: %s\n' "$plugin" >&2; exit 1;
+  }
+fi
+if [[ -e "$service" || -L "$service" ]]; then
+  [[ ! -L "$service" && -f "$service" ]] || { printf 'Refusing service symlink or non-file\n' >&2; exit 1; }
+  expected=$(cat -- "$root/packaging/omarchy-meshtastic.service")
+  legacy=${expected#*$'\n'}
+  legacy=${legacy//\/bin\/python/\/.venv\/bin\/python}
+  legacy=${legacy//\/plugin\/bridge.py/\/bridge.py}
+  actual=$(cat -- "$service")
+  [[ "$actual" == "$expected" || "$actual" == "$legacy" ]] || {
+    printf 'Refusing unrelated or customized service: %s\n' "$service" >&2; exit 1;
+  }
+  systemctl --user disable --now omarchy-meshtastic.service
+  rm -- "$service"
+  systemctl --user daemon-reload
+fi
+printf 'Bridge removed; environment, history, checkout and layout preserved.\n'
+printf 'Remove the plugin separately: omarchy plugin remove miszarchy.meshtastic\n'

@@ -1,0 +1,9 @@
+.venv/
+plugin/.venv
+__pycache__/
+*.py[cod]
+.impeccable/
+*.env
+*.sqlite3
+*.sqlite3-*
+.pytest_cache/
